@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: "PHP ${{ matrix.php }} (${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        include:
+          - os: 'windows-latest'
+            php: '8.3'
+
+    steps:
+      - name: Checkout this package
+        uses: actions/checkout@v4
+        with:
+          path: package
+
+      - name: Checkout latest PHPCS (4.x)
+        uses: actions/checkout@v4
+        with:
+          repository: PHPCSStandards/PHP_CodeSniffer
+          ref: 4.x
+          path: phpcs
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Install PHPCS dependencies
+        working-directory: phpcs
+        run: composer install --no-progress --no-interaction
+
+      - name: Inject reporter and tests into PHPCS
+        shell: bash
+        run: package/bin/inject-into-phpcs.sh phpcs
+
+      - name: Run PHPCS's full PHPUnit suite (with our injected CtrfTest)
+        working-directory: phpcs
+        shell: bash
+        run: |
+          if php -r "exit(version_compare(PHP_VERSION, '8.0.0', '>=') ? 0 : 1);"; then
+            ./vendor/bin/phpunit --no-coverage
+          else
+            # PHPUnit < 10 config for older PHP.
+            ./vendor/bin/phpunit -c phpunit-lte9.xml.dist --no-coverage
+          fi
+
+      - name: Install bashunit
+        if: runner.os == 'Linux'
+        working-directory: phpcs
+        shell: bash
+        run: |
+          curl -s https://bashunit.typeddevs.com/install.sh > install.sh
+          chmod +x install.sh
+          ./install.sh
+
+      - name: Run PHPCS's bashunit harness (with our injected ctrf_test.sh)
+        if: runner.os == 'Linux'
+        working-directory: phpcs
+        shell: bash
+        run: ./lib/bashunit -p tests/EndToEndBash
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ludeeus/action-shellcheck@2.0.0

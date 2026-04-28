@@ -1,0 +1,22 @@
+{
+    "name": "luc45/phpcs-ctrf-reporter",
+    "description": "CTRF (Common Test Report Format) reporter for PHP_CodeSniffer.",
+    "license": "BSD-3-Clause",
+    "type": "library",
+    "keywords": ["phpcs", "php_codesniffer", "ctrf", "reporter", "lint", "static-analysis"],
+    "authors": [
+        {
+            "name": "Lucas Bustamante",
+            "email": "lucasfbustamante@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2.0",
+        "squizlabs/php_codesniffer": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Luc45\\PhpcsCtrf\\": "src/"
+        }
+    }
+}
