@@ -21,6 +21,14 @@ jobs:
             php: '8.3'
 
     steps:
+      # PHPCS's tokenizer tests are line-ending sensitive. Without this,
+      # actions/checkout converts to CRLF on Windows and dozens of unrelated
+      # PHPCS tests fail. Mirrors PHPCS's own workflow.
+      - name: Disable Git autocrlf
+        if: runner.os == 'Windows'
+        shell: bash
+        run: git config --global core.autocrlf input
+
       - name: Checkout this package
         uses: actions/checkout@v4
         with:
